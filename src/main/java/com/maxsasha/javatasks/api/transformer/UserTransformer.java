@@ -5,7 +5,7 @@ import com.maxsasha.javatasks.entity.User;
 
 public class UserTransformer {
 
-	public User toEntity(UserDto dto) {
+	public User transform(UserDto dto) {
 		return User.builder()
 				.id(dto.getId())
 				.name(dto.getName())
@@ -13,12 +13,11 @@ public class UserTransformer {
 				.build();
 	}
 	
-	public UserDto toDto(User user) {
+	public UserDto transform(User user) {
 		return UserDto.builder()
 				.id(user.getId())
 				.name(user.getName())
 				.email(user.getEmail())
 				.build();
 	}
-	
 }

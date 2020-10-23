@@ -1,5 +1,6 @@
 package com.maxsasha.javatasks.entity;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -9,20 +10,11 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class User {
-	@Getter
-	private int id;
-	@Getter
-	@Setter
+	@Setter(AccessLevel.NONE)
+	private Integer id;
 	private String name;
-	@Getter
-	@Setter
 	private String email;
-
-	public User(String name, String email) {
-		this.name = name;
-		this.email = email;
-	}
-	
-	
 }

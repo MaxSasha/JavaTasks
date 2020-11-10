@@ -9,8 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.maxsasha.javatasks.api.dto.UserDto;
-import com.maxsasha.javatasks.api.transformer.UserTransformer;
 import com.maxsasha.javatasks.db.DatabaseConnection;
 import com.maxsasha.javatasks.entity.User;
 
@@ -18,127 +16,96 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class UserRepository {
-	private static final String usersSql = "SELECT * FROM users";
-	private static final String userSql = "SELECT * FROM users WHERE id= ?";
-	private static final String insertUserSql = "INSERT INTO users (NAME, EMAIL) VALUES (?, ?)";
-	private static final String updateUserSql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
-	private static final String deleteUserSql = "DELETE FROM users WHERE id = ?";
-	private final UserTransformer transformer = new UserTransformer();
+	private static final String SELECT_USERS_SQL = "SELECT * FROM users";
+	private static final String SELECT_USER_BY_ID_SQL = "SELECT * FROM users WHERE id= ?";
+	private static final String INSERT_USER_SQL = "INSERT INTO users (NAME, EMAIL) VALUES (?, ?)";
+	private static final String UPDATE_USER_BY_ID_SQL = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+	private static final String DELETE_USER_BY_ID_SQL = "DELETE FROM users WHERE id = ?";
 	private final DatabaseConnection dbConnection = new DatabaseConnection();
 
-	public List<UserDto> getUsers() throws RuntimeException {
-		List<UserDto> listUsers = new ArrayList<UserDto>();
+	public List<User> findAll() throws RuntimeException {
+		List<User> listUsers = new ArrayList<>();
 		Connection conn = null;
 		try {
 			conn = dbConnection.getConnection();
 			Statement statement = conn.createStatement();
-			ResultSet users = statement.executeQuery(usersSql);
-			while (users.next()) {
-				User user = User.builder()
-						.id(users.getInt("id"))
-						.name(users.getString("name"))
-						.email(users.getString("email"))
-						.build();
-				listUsers.add(transformer.transform(user));
+			ResultSet usersFromSql = statement.executeQuery(SELECT_USERS_SQL);
+			while (usersFromSql.next()) {
+				listUsers.add(extractFromResultSet(usersFromSql));
 			}
 		} catch (SQLException ex) {
 			log.error(String.format("Error to get user. Exception message:{}", ex.getMessage()));
 			throw new RuntimeException(String.format("Exception in getUsers. Exception message:{}", ex.getMessage()),
 					ex);
 		} finally {
-			try {
-				conn.close();
-			} catch (SQLException ex) {
-				log.error("Can`t close connection. Exception message:{}", ex.getMessage());
-				throw new RuntimeException(
-						String.format("Exception with close connection. Exception message:{}", ex.getMessage()));
-			}
+			dbConnection.closeConnection(conn);
 		}
 		return listUsers;
 	}
 
-	public Optional<User> getUser(int id) throws RuntimeException {
+	public Optional<User> findById(int id) throws RuntimeException {
 		User user = null;
 		Connection conn = null;
 		try {
 			conn = dbConnection.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement(userSql);
+			PreparedStatement preparedStatement = conn.prepareStatement(SELECT_USER_BY_ID_SQL);
 			preparedStatement.setInt(1, id);
 			ResultSet sqlResult = preparedStatement.executeQuery();
 			if (sqlResult.next()) {
-				user = User.builder()
-						.id(sqlResult.getInt("id"))
-						.name(sqlResult.getString("name"))
-						.email(sqlResult.getString("email"))
-						.build();
+				user = extractFromResultSet(sqlResult);
 			}
 		} catch (SQLException ex) {
-			log.error("Exception in geUser. Exception message:{}", ex.getMessage());
+			log.error("Exception in getUser. Exception message:{}", ex.getMessage());
 			throw new RuntimeException(String.format("Exception in getUser. Exception message:{}", ex.getMessage()));
 		} finally {
-			try {
-				conn.close();
-			} catch (SQLException ex) {
-				log.error(String.format("Can`t close connection. Exception message:{}", ex.getMessage()));
-				throw new RuntimeException(
-						String.format("Exception with close connection. Exception message:{}", ex.getMessage()));
-			}
+			dbConnection.closeConnection(conn);
 		}
 		return Optional.ofNullable(user);
 	}
 
-	public Optional<User> putUser(UserDto userDto) throws RuntimeException {
-		Optional<User> user = Optional.ofNullable(transformer.transform(userDto));
-		Optional<User> checkExsistUser;
+	public Optional<User> upsert(User user) throws RuntimeException {
+		Optional<User> userOp = Optional.ofNullable(user);
 		Connection conn = null;
 		try {
 			conn = dbConnection.getConnection();
 			PreparedStatement preparedStatement = null;
-			checkExsistUser = getUser(user.get().getId() != null ? user.get().getId() : 0);
-			if (checkExsistUser.isPresent()) {
-				preparedStatement = conn.prepareStatement(updateUserSql);
-				preparedStatement.setInt(3, user.get().getId());
-				checkExsistUser = user;
-			} else if (!checkExsistUser.isPresent()) {
-				preparedStatement = conn.prepareStatement(insertUserSql);
+			boolean userExists = userOp.map(u -> findById(u.getId())).isPresent();
+			if (userExists) {
+				preparedStatement = conn.prepareStatement(UPDATE_USER_BY_ID_SQL);
+				preparedStatement.setInt(3, userOp.get().getId());
+			} else if (!userExists) {
+				preparedStatement = conn.prepareStatement(INSERT_USER_SQL);
 			}
-			preparedStatement.setString(1, user.get().getName());
-			preparedStatement.setString(2, user.get().getEmail());
+			preparedStatement.setString(1, userOp.get().getName());
+			preparedStatement.setString(2, userOp.get().getEmail());
 			preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			log.error("Exception in putUser. Exception message:{}", ex.getMessage());
 			throw new RuntimeException(String.format("Exception in putUser. Exception message:{}", ex.getMessage()));
 		} finally {
-			try {
-				conn.close();
-			} catch (SQLException ex) {
-				log.error(String.format("Can`t close connection. Exception message:{}", ex.getMessage()));
-				throw new RuntimeException(
-						String.format("Exception with close connection. Exception message:{}", ex.getMessage()));
-			}
+			dbConnection.closeConnection(conn);
 		}
-		return checkExsistUser;
+		return userOp;
 	}
 
-	public void delete(int id) throws RuntimeException {
+	public void deleteById(int id) throws RuntimeException {
 		Connection conn = null;
 		PreparedStatement preparedStatement = null;
 		try {
 			conn = dbConnection.getConnection();
-			preparedStatement = conn.prepareStatement(deleteUserSql);
+			preparedStatement = conn.prepareStatement(DELETE_USER_BY_ID_SQL);
 			preparedStatement.setInt(1, id);
 			preparedStatement.executeUpdate();
 		} catch (SQLException ex) {
 			log.error("Exception in deleteUser. Exception message:{}", ex.getMessage());
 			throw new RuntimeException(String.format("Exception in putUser. Exception message:{}", ex.getMessage()));
 		} finally {
-			try {
-				conn.close();
-			} catch (SQLException ex) {
-				log.error(String.format("Can`t close connection. Exception message:{0}", ex.getMessage()));
-				throw new RuntimeException(
-						String.format("Exception with close connection. Exception message:{}", ex.getMessage()));
-			}
+			dbConnection.closeConnection(conn);
 		}
+	}
+
+	private User extractFromResultSet(ResultSet sqlResult) throws SQLException {
+		return User.builder().id(sqlResult.getInt("id")).name(sqlResult.getString("name"))
+				.email(sqlResult.getString("email")).build();
 	}
 }

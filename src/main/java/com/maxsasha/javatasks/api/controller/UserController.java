@@ -38,7 +38,7 @@ public class UserController extends javax.servlet.http.HttpServlet {
 			return request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
 		} catch (IOException ex) {
 			log.error("Error with get request info", ex.getMessage());
-			throw new RuntimeException(String.format("Error with get request info", ex.getMessage()));
+			throw new RuntimeException(String.format("Error with get request info {0}", ex.getMessage()));
 		}
 	}
 
@@ -75,7 +75,7 @@ public class UserController extends javax.servlet.http.HttpServlet {
 				sendAsJson(response, user.get());
 				response.setStatus(200);
 				log.info("Update user:{}", user.get());
-			} else if (user.isEmpty()) {
+			} else {
 				sendAsJson(response, "User successfully created");
 				response.setStatus(201);
 			}

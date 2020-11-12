@@ -13,9 +13,9 @@ public class PropertiesUtils {
 	public static Properties getProperties(String propFileName) throws IOException {
 		Properties properties = new Properties();
 		InputStream inputStream = PropertiesUtils.class.getClassLoader().getResourceAsStream(propFileName);
-		
+
 		if (inputStream == null) {
-			throw new FileNotFoundException(String.format("Property file {} not found", propFileName));
+			throw new FileNotFoundException(String.format("Property file {0} not found", propFileName));
 		}
 		properties.load(inputStream);
 		return properties;

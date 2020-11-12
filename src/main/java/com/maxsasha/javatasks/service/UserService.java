@@ -1,6 +1,5 @@
 package com.maxsasha.javatasks.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +10,7 @@ public class UserService {
 	private final UserRepository dbActions = new UserRepository();
 
 	public List<User> getUsers() throws RuntimeException {
-		List<User> users = new ArrayList<>();
-		users = dbActions.findAll();
-		return users;
+		return dbActions.findAll();
 	}
 
 	public void createUser(User user) throws RuntimeException {

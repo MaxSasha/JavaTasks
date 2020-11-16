@@ -1,0 +1,4 @@
+user = insane
+pass = SMax2000
+url = jdbc:mysql://localhost/task1?useUnicode=true&serverTimezone=UTC
+dbDriver = com.mysql.jdbc.Driver

@@ -1,27 +1,27 @@
 package com.maxsasha.javatasks.service;
 
+import java.sql.SQLException;
 import java.util.List;
-import java.util.Optional;
 
 import com.maxsasha.javatasks.db.repository.UserRepository;
 import com.maxsasha.javatasks.entity.User;
 
 public class UserService {
-	private final UserRepository dbActions = new UserRepository();
+	private final UserRepository userRepository = new UserRepository();
 
-	public List<User> getUsers() throws RuntimeException {
-		return dbActions.findAll();
+	public List<User> getUsers() throws RuntimeException, SQLException {
+		return userRepository.findAll();
 	}
 
-	public void createUser(User user) throws RuntimeException {
-		dbActions.upsert(user);
+	public void createUser(User user) throws RuntimeException, SQLException {
+		userRepository.create(user);
 	}
 
-	public Optional<User> editUser(User user) throws RuntimeException {
-		return dbActions.upsert(user);
+	public User editUser(User user, String id) throws RuntimeException, SQLException {
+		return userRepository.update(user, id);
 	}
 
-	public void deleteUser(int userId) throws RuntimeException {
-		dbActions.deleteById(userId);
+	public void deleteUser(String id) throws RuntimeException, SQLException {
+		userRepository.deleteById(id);
 	}
 }

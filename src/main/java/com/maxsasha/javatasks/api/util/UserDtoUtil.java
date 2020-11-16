@@ -18,7 +18,7 @@ public class UserDtoUtil {
 		try {
 			return mapper.readValue(json, User.class);
 		} catch (IOException ex) {
-			log.error("Error with convert json to dto", ex.getMessage());
+			log.error("Error with convert json to dto {}", ex.getMessage());
 			throw new RuntimeException(String.format("Error with convert json to object {0}", ex.getMessage()));
 		}
 	}
